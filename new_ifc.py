@@ -3,10 +3,9 @@
 # для работы с IFC: ifcopenshell
 # для математических операций: math
 
-import re
 import time
 import ifcopenshell as ios
-import math
+# import math
 
 import bpy
 
@@ -401,14 +400,17 @@ for _srp in srps:
 frames = []
 
 for _srp in srps:
+    _frames = []
     for _axis in srpsAxes[_srp.Name]:
         _frame = ifc.createIfcBuilding(ios.guid.new(), ownerHistory)
         _frame.Name = 'Frame on Axis ' + _axis.AxisTag
         _frame.ObjectPlacement = create_customgridplacement(PRMainAxis, _axis)
-        _frameContainer = ifc.createIfcRelAggregates()
-        _frameContainer.RelatingObject = _srp
-        _frameContainer.RelatedObjects = [_frame]
+        _frames.append(_frame)
         frames.append(_frame)
+    _frameContainer = ifc.createIfcRelAggregates()
+    _frameContainer.RelatingObject = _srp
+    _frameContainer.RelatedObjects = _frames
+        
 
 # Создание колонн
 
@@ -452,17 +454,19 @@ def ColumnCreation(
     _column.ObjectPlacement = _columnPlacement
     _column.Representation = _columnPDS
 
-    _columnContainer = ifc.createIfcRelContainedInSpatialStructure()
-    _columnContainer.RelatingStructure = _RelatingStructure
-    _columnContainer.RelatedElements = [_column]
+    return _column
 
 for _frame in frames:
     _Tag = 'PCC' + str(frames.index(_frame) + 1)
     _Depth = PRLevels['Tier 2']-PRLevels['Ground Level'],
     # _Depth, = _Depth
     _Depth = _Depth[0]
-    ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth)
-    ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth, _Side=-1)
+    _leftColumn = ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth)
+    _rightColumn = ColumnCreation(
+        _RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth, _Side=-1)
+    _columnsContainer = ifc.createIfcRelContainedInSpatialStructure()
+    _columnsContainer.RelatingStructure = _frame
+    _columnsContainer.RelatedElements = [_leftColumn, _rightColumn]
 
 # print(project)
 
