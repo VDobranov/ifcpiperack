@@ -386,14 +386,15 @@ def TierCreation (_name, _srp, _elevation):
     _tier.Name = _srp.Name + ". " + _name
     # _tier.Name = _name
     _tier.Elevation = _elevation
-    _tierContainer = ifc.createIfcRelAggregates()
-#	_tierContainer.Name = f"{_elevation} Tier Container"
-    _tierContainer.RelatingObject = _srp
-    _tierContainer.RelatedObjects = [_tier]
+    return _tier
 
 for _srp in srps:
+    _tierContainer = ifc.createIfcRelAggregates()
+    _tierContainer.RelatingObject = _srp
+    _tiers = []
     for k, v in PRLevels.items():
-        TierCreation(k, _srp, v)
+        _tiers.append(TierCreation(k, _srp, v))
+    _tierContainer.RelatedObjects = _tiers
 
 # Создание рам
 
@@ -422,7 +423,7 @@ def ColumnCreation(
     _Name='Precast Column',
     _Tag='PCC',
     _RelatingStructure=site,
-    _Side=1
+    _Side=None
 ):
     _columnProfile = ifc.createIfcRectangleProfileDef()
     _columnProfile.ProfileType = 'AREA'
@@ -443,9 +444,8 @@ def ColumnCreation(
     _columnPDS = ifc.createIfcProductDefinitionShape()
     _columnPDS.Representations = [_columnSP]
 
-    _columnPoint = ifc.createIfcCartesianPoint(
-        [0., _Side*PRWidth/2, PRLevels['Ground Level']])
-    _columnPlacement = create_ifclocalplacement(point=_columnPoint,relativeTo=_RelatingStructure.ObjectPlacement)
+    
+    _columnPlacement = create_ifclocalplacement(point=_Side,relativeTo=_RelatingStructure.ObjectPlacement)
 
     _column = ifc.createIfcColumn(ios.guid.new(), ownerHistory)
     _column.Name = _Name
@@ -456,14 +456,16 @@ def ColumnCreation(
 
     return _column
 
+LeftPoint = ifc.createIfcCartesianPoint([0., PRWidth/2, PRLevels['Ground Level']])
+RightPoint = ifc.createIfcCartesianPoint([0., -PRWidth/2, PRLevels['Ground Level']])
+
 for _frame in frames:
     _Tag = 'PCC' + str(frames.index(_frame) + 1)
     _Depth = PRLevels['Tier 2']-PRLevels['Ground Level'],
     # _Depth, = _Depth
     _Depth = _Depth[0]
-    _leftColumn = ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth)
-    _rightColumn = ColumnCreation(
-        _RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth, _Side=-1)
+    _leftColumn = ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth, _Side=LeftPoint)
+    _rightColumn = ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth, _Side=RightPoint)
     _columnsContainer = ifc.createIfcRelContainedInSpatialStructure()
     _columnsContainer.RelatingStructure = _frame
     _columnsContainer.RelatedElements = [_leftColumn, _rightColumn]
