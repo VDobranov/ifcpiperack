@@ -416,7 +416,7 @@ for _srp in srps:
 def ColumnCreation(
     _XDim=600.,
     _YDim=600.,
-    _Depth=PRLevels['Tier 2']-PRLevels['Ground Level'],
+    _Depth=6000.,
     _Name='Precast Column',
     _Tag='PCC',
     _RelatingStructure=site,
@@ -458,8 +458,11 @@ def ColumnCreation(
 
 for _frame in frames:
     _Tag = 'PCC' + str(frames.index(_frame) + 1)
-    ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag)
-    ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Side=-1)
+    _Depth = PRLevels['Tier 2']-PRLevels['Ground Level'],
+    # _Depth, = _Depth
+    _Depth = _Depth[0]
+    ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth)
+    ColumnCreation(_RelatingStructure=_frame, _Tag=_Tag, _Depth=_Depth, _Side=-1)
 
 # print(project)
 
