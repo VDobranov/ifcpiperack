@@ -23,6 +23,13 @@ adX =-1., 0., 0.
 adY = 0., -1., 0.
 adZ = 0., 0., -1.
 
+ifc.createIfcCartesianPoint(pO)
+ifc.createIfcCartesianPoint(pO)
+ifc.createIfcCartesianPoint(pO)
+ifc.createIfcCartesianPoint(pO)
+ifc.createIfcCartesianPoint(pO)
+
+
 globalAxisX = ifc.createIfcDirection(dX)
 globalAxisY = ifc.createIfcDirection(dY)
 globalAxisZ = ifc.createIfcDirection(dZ)
@@ -204,6 +211,12 @@ bodyContext.ContextIdentifier = 'Body'
 bodyContext.ContextType = 'Model'
 bodyContext.ParentContext = modelContext
 bodyContext.TargetView = 'MODEL_VIEW'
+
+axisContext = ifc.createIfcGeometricRepresentationSubContext()
+axisContext.ContextIdentifier = 'Axis'
+axisContext.ContextType = 'Model'
+axisContext.ParentContext = modelContext
+axisContext.TargetView = 'MODEL_VIEW'
 
 planContext = ifc.createIfcGeometricRepresentationContext()
 planContext.ContextType = 'Plan'
@@ -487,12 +500,12 @@ def createExtrudedAreaSolid(
     _EndCut=0.,
 #    _Axis=globalAxisZ
 ):
-    _profile=None
-    for p in rectProfiles:
-        if _XDim == p.XDim and _YDim == p.YDim:
-            _profile = p
-    if _profile == None:
-        _profile = createRectProfile(_XDim, _YDim)
+    # _profile=None
+    # for p in rectProfiles:
+    #     if _XDim == p.XDim and _YDim == p.YDim:
+    #         _profile = p
+    # if _profile == None:
+    _profile = createRectProfile(_XDim, _YDim)
     _cardinalPoint=None
     _cardinalPointCoords=findCardinalPointCoords(_XDim, _YDim, _CardinalIndex)
     _cardinalPointCoords[2] += _StartCut
@@ -721,43 +734,58 @@ for _frame in frames:
     _elementsContainer.RelatedElements = [_leftColumn, _rightColumn, _lowerBeam, _upperBeam]
 
 
+beamPlacement = ifc.createIfcLocalPlacement()
+beamPlacement.PlacementRelTo = frames[1].ObjectPlacement
+beamPlacement.RelativePlacement = ifc.createIfcAxis2Placement3d(
+    originPoint, globalAxisY)
 
+beamP = ifc.createIfcRectangleProfileDef()
+beamP.ProfileType = 'AREA'
+#beamP.ProfileName = '600*600'
+beamP.XDim, beamP.YDim = 500., 700.
+beamEAS = ifc.createIfcExtrudedAreaSolid()
+beamEAS.SweptArea = beamP
+beamEAS.ExtrudedDirection = globalAxisZ
+beamEAS.Depth = 6000.
+beamPos = ifc.createIfcCartesianPoint([0.,350.,0.])
+beamEAS.Position = ifc.createIfcAxis2Placement3d(beamPos)
+beamStart = beamPlacement.RelativePlacement.Location
+beamEnd = ifc.createIfcCartesianPoint([
+    beamStart.Coordinates[0] + beamEAS.Depth *
+    globalAxisZ.DirectionRatios[0],
+    beamStart.Coordinates[1] + beamEAS.Depth *
+    globalAxisZ.DirectionRatios[1],
+    beamStart.Coordinates[2] + beamEAS.Depth *
+    globalAxisZ.DirectionRatios[2],
+])
+beamAx = ifc.createIfcPolyline([beamStart, beamEnd])
+beamSP0 = ifc.createIfcShapeRepresentation()
+beamSP0.ContextOfItems = axisContext
+beamSP0.RepresentationIdentifier = 'Axis'
+beamSP0.RepresentationType = 'SweptSolid'
+beamSP0.Items = [beamAx]
+beamSP1 = ifc.createIfcShapeRepresentation()
+beamSP1.ContextOfItems = bodyContext
+beamSP1.RepresentationIdentifier = 'Body'
+beamSP1.RepresentationType = 'SweptSolid'
+beamSP1.Items = [beamEAS]
+beamPDS = ifc.createIfcProductDefinitionShape()
+beamPDS.Representations = [beamSP1, beamSP0]
 
-#beamP = ifc.createIfcRectangleProfileDef()
-#beamP.ProfileType = 'AREA'
-##beamP.ProfileName = '600*600'
-#beamP.XDim, beamP.YDim = 500., 700.
-#beamEAS = ifc.createIfcExtrudedAreaSolid()
-#beamEAS.SweptArea = beamP
-#beamEAS.ExtrudedDirection = globalAxisZ
-#beamEAS.Depth = 6000.
-#beamPos = ifc.createIfcCartesianPoint([0.,350.,0.])
-#beamEAS.Position = ifc.createIfcAxis2Placement3d(beamPos)
-#beamSP = ifc.createIfcShapeRepresentation()
-#beamSP.ContextOfItems = bodyContext
-#beamSP.RepresentationIdentifier = 'Body'
-#beamSP.RepresentationType = 'SweptSolid'
-#beamSP.Items = [beamEAS]
-#beamPDS = ifc.createIfcProductDefinitionShape()
-#beamPDS.Representations = [beamSP]
+beam = ifc.createIfcBeam(ios.guid.new(), ownerHistory)
+beam.Name = f'{beamPlacement.RelativePlacement.Axis.DirectionRatios}'
+beam.ObjectPlacement = beamPlacement
+beam.Representation = beamPDS
 
-#beamPlacement = ifc.createIfcLocalPlacement()
-#beamPlacement.PlacementRelTo = frames[1].ObjectPlacement
-#beamPlacement.RelativePlacement = ifc.createIfcAxis2Placement3d(originPoint,globalAxisY)
-
-#beam = ifc.createIfcBeam(ios.guid.new(), ownerHistory)
-#beam.ObjectPlacement = beamPlacement
-#beam.Representation = beamPDS
-
-#beamContainer = ifc.createIfcRelContainedInSpatialStructure()
-#beamContainer.RelatingStructure = frames[1]
-#beamContainer.RelatedElements = [beam]
+beamContainer = ifc.createIfcRelContainedInSpatialStructure()
+beamContainer.RelatingStructure = frames[1]
+beamContainer.RelatedElements = [beam]
 
 # print(project)
 
 # path = 'H:\\PY\\new_model.ifc'
-path = 'D:\\DELETEME\\new_model.ifc'
-#path = '/Users/vdobranov/Yandex.Disk.localized/Python/Mac/ifcopenshell/new_model.ifc'
+#path = 'D:\\DELETEME\\new_model.ifc'
+path = '/Users/vdobranov/Yandex.Disk.localized/Python/Mac/ifcopenshell/new_model.ifc'
 ifc.write(path)
 
 def load_ifc_automatically(f):
