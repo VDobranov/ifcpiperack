@@ -19,16 +19,9 @@ pO = 0., 0., 0.
 dX = 1., 0., 0.
 dY = 0., 1., 0.
 dZ = 0., 0., 1.
-adX =-1., 0., 0.
+adX = -1., 0., 0.
 adY = 0., -1., 0.
 adZ = 0., 0., -1.
-
-ifc.createIfcCartesianPoint(pO)
-ifc.createIfcCartesianPoint(pO)
-ifc.createIfcCartesianPoint(pO)
-ifc.createIfcCartesianPoint(pO)
-ifc.createIfcCartesianPoint(pO)
-
 
 globalAxisX = ifc.createIfcDirection(dX)
 globalAxisY = ifc.createIfcDirection(dY)
@@ -38,27 +31,27 @@ globalAxisYa = ifc.createIfcDirection(adY)
 globalAxisZa = ifc.createIfcDirection(adZ)
 originPoint = ifc.createIfcCartesianPoint(pO)
 
-worldCoordinateSystem = ifc.createIfcAxis2Placement3D(originPoint, globalAxisZ, globalAxisX)
+worldCoordinateSystem = ifc.createIfcAxis2Placement3D(
+    originPoint, globalAxisZ, globalAxisX)
 
 # Константы эстакады
 
 PRWidth = 6000.0
-PRSpans = [12000.0,21000.0,6000.0,9000.0,6000.0,9000.0,6000.0,9000.0]
+PRSpans = [12000.0, 21000.0, 6000.0, 9000.0, 6000.0, 9000.0, 6000.0, 9000.0]
 PRLength = sum(PRSpans)
 PRLevels = {
     'Ground Level': 00.,
     'Tier 1': 6400.,
     'Tier 2': 10000.
 }
-PRSrps = [[1,3],[4,9]]
+PRSrps = [[1, 3], [4, 9]]
 
 PRIfcOrigin = originPoint
-PRIfcEnd    = ifc.createIfcCartesianPoint([
+PRIfcEnd = ifc.createIfcCartesianPoint([
     originPoint.Coordinates[0] + PRLength,
     originPoint.Coordinates[1],
     originPoint.Coordinates[2]
 ])
-
 
 
 # Функции
@@ -66,10 +59,10 @@ PRIfcEnd    = ifc.createIfcCartesianPoint([
 # Creates an IfcAxis2Placement3D from Location, Axis and RefDirection
 
 def create_ifcaxis2placement(
-    ifcfile     =   ifc,
-    point       =   originPoint,
-    dir1        =   globalAxisZ,
-    dir2        =   globalAxisX
+    ifcfile=ifc,
+    point=originPoint,
+    dir1=globalAxisZ,
+    dir2=globalAxisX
 ):
     if point == originPoint and dir1 == globalAxisZ and dir2 == globalAxisX:
         axis2placement = worldCoordinateSystem
@@ -79,12 +72,13 @@ def create_ifcaxis2placement(
 
 # Creates an IfcLocalPlacement from Location, Axis, RefDirection and relative placement
 
+
 def create_ifclocalplacement(
-    ifcfile     =   ifc,
-    point       =   originPoint,
-    dir1        =   globalAxisZ,
-    dir2        =   globalAxisX,
-    relativeTo =   None
+    ifcfile=ifc,
+    point=originPoint,
+    dir1=globalAxisZ,
+    dir2=globalAxisX,
+    relativeTo=None
 ):
     if point == originPoint and dir1 == globalAxisZ and dir2 == globalAxisX:
         axis2placement = worldCoordinateSystem
@@ -128,6 +122,7 @@ def create_customgridplacement(axis1, axis2, dir1=globalAxisZ, dir2=globalAxisX)
 
 # Юридическая информация
 
+
 engineer = ifc.createIfcActorRole('ENGINEER')
 contractor = ifc.createIfcActorRole('CONTRACTOR')
 owner = ifc.createIfcActorRole('OWNER')
@@ -151,6 +146,7 @@ myApp = ifc.createIfcApplication()
 myApp.ApplicationDeveloper = myOrganization
 myApp.Version = '0.0.1'
 myApp.ApplicationFullName = 'KK-IFC'
+myApp.ApplicationIdentifier = '…'
 
 # creationDate = ifc.createIfcTimeStamp(int(time.time()))
 ownerHistory = ifc.createIfcOwnerHistory()
@@ -241,7 +237,7 @@ site = ifc.createIfcSite(ios.guid.new())
 site.Name = "Construction Site"
 site.ObjectPlacement = sitePlacement
 
-siteContainer = ifc.createIfcRelAggregates()
+siteContainer = ifc.createIfcRelAggregates(ios.guid.new())
 siteContainer.RelatingObject = project
 siteContainer.RelatedObjects = [site]
 
@@ -262,12 +258,15 @@ for a in range(3):
         0.
     ])
     axis = ifc.createIfcGridAxis()
-    if p1.Coordinates[1] < 0: axis.AxisTag = "A"
+    if p1.Coordinates[1] < 0:
+        axis.AxisTag = "A"
     elif p1.Coordinates[1] == 0:
         axis.AxisTag = "Piperack Axis"
         PRMainAxis = axis
-    else: axis.AxisTag = "B"
+    else:
+        axis.AxisTag = "B"
     axis.AxisCurve = ifc.createIfcPolyline([p1, p2])
+    axis.SameSense = True
     PRMainAxes.append(axis)
     PRMainAxesPolylines.append(axis.AxisCurve)
 
@@ -292,14 +291,16 @@ for a in range(len(PRSpans)+1):
     axis = ifc.createIfcGridAxis()
     axis.AxisTag = f"{a+1}"
     axis.AxisCurve = ifc.createIfcPolyline([p1, p2])
+    axis.SameSense = True
     PRCrossAxes.append(axis)
     PRCrossAxesPolylines.append(axis.AxisCurve)
 
-PRCrossAxis=PRCrossAxes[0]
+PRCrossAxis = PRCrossAxes[0]
 
 PRMainGridPlacement = create_ifclocalplacement(relativeTo=sitePlacement)
 
-PRMainGridGeomCurveSet = ifc.createIfcGeometricCurveSet(PRMainAxesPolylines + PRCrossAxesPolylines)
+PRMainGridGeomCurveSet = ifc.createIfcGeometricCurveSet(
+    PRMainAxesPolylines + PRCrossAxesPolylines)
 
 PRMainGridShapeRepresent = ifc.createIfcShapeRepresentation()
 PRMainGridShapeRepresent.ContextOfItems = footprintContext
@@ -310,14 +311,15 @@ PRMainGridShapeRepresent.Items = [PRMainGridGeomCurveSet]
 PRMainGridProductDefShape = ifc.createIfcProductDefinitionShape()
 PRMainGridProductDefShape.Representations = [PRMainGridShapeRepresent]
 
-PRMainGrid = ifc.createIfcGrid(ios.guid.new(),ownerHistory)
+PRMainGrid = ifc.createIfcGrid(ios.guid.new(), ownerHistory)
 PRMainGrid.Name = 'Piperack Grid'
 PRMainGrid.UAxes = PRMainAxes
 PRMainGrid.VAxes = PRCrossAxes
 PRMainGrid.ObjectPlacement = PRMainGridPlacement
 PRMainGrid.Representation = PRMainGridProductDefShape
 
-PRMainGridSpatialContainer = ifc.createIfcRelContainedInSpatialStructure()
+PRMainGridSpatialContainer = ifc.createIfcRelContainedInSpatialStructure(
+    ios.guid.new())
 PRMainGridSpatialContainer.Name = 'Piperack Main Grid Container'
 PRMainGridSpatialContainer.RelatingStructure = site
 PRMainGridSpatialContainer.RelatedElements = [PRMainGrid]
@@ -331,7 +333,7 @@ piperack.Name = "Piperack"
 piperack.CompositionType = 'COMPLEX'
 piperack.ObjectPlacement = piperackPlacement
 
-piperackContainer = ifc.createIfcRelAggregates()
+piperackContainer = ifc.createIfcRelAggregates(ios.guid.new())
 piperackContainer.Name = "Piperack Container"
 piperackContainer.RelatingObject = site
 piperackContainer.RelatedObjects = [piperack]
@@ -341,12 +343,13 @@ piperackContainer.RelatedObjects = [piperack]
 #srp1Placement = create_ifclocalplacement(relativeTo=piperackPlacement)
 #srp2Placement = create_ifclocalplacement(relativeTo=piperackPlacement)
 #srp2Placement = ifc.createIfcGridPlacement()
-#srp2Placement.PlacementLocation = ifc.createIfcVirtualGridIntersection(
+# srp2Placement.PlacementLocation = ifc.createIfcVirtualGridIntersection(
 # 	[PRMainAxis, PRCrossAxes[4]])
 
 srps = []
 srpsPlacement = []
 srpsAxes = {}
+
 
 def SrpCreation(_axesNums, _gridPlacement=False):
     _crossAxis = ''
@@ -360,12 +363,15 @@ def SrpCreation(_axesNums, _gridPlacement=False):
     else:
         _globalOrigin = piperackPlacement.RelativePlacement.Location
         _origin = ifc.createIfcCartesianPoint([
-            _globalOrigin.Coordinates[0] + _crossAxis.AxisCurve.Points[0].Coordinates[0],
+            _globalOrigin.Coordinates[0] +
+            _crossAxis.AxisCurve.Points[0].Coordinates[0],
             _globalOrigin.Coordinates[1],
             _globalOrigin.Coordinates[2]
         ])
-        _axis2placement = ifc.createIfcAxis2Placement3D(_origin, globalAxisZ, globalAxisX)
-        _srpPlacement = ifc.createIfcLocalPlacement(piperackPlacement, _axis2placement)
+        _axis2placement = ifc.createIfcAxis2Placement3D(
+            _origin, globalAxisZ, globalAxisX)
+        _srpPlacement = ifc.createIfcLocalPlacement(
+            piperackPlacement, _axis2placement)
     _srp = ifc.createIfcBuilding(ios.guid.new(), ownerHistory)
     _srp.Name = 'Tag ' + str(PRSrps.index(_axesNums) + 1)
     _srp.CompositionType = 'COMPLEX'
@@ -393,22 +399,24 @@ for _axes in PRSrps:
 #srp2.CompositionType = 'PARTIAL'
 #srp2.ObjectPlacement = srp2Placement
 
-srpsContainer = ifc.createIfcRelAggregates()
+srpsContainer = ifc.createIfcRelAggregates(ios.guid.new())
 srpsContainer.Name = "SRPs Container"
 srpsContainer.RelatingObject = piperack
 srpsContainer.RelatedObjects = srps
 
 # Создание ярусов эстакады
 
-def TierCreation (_name, _srp, _elevation):
+
+def TierCreation(_name, _srp, _elevation):
     _tier = ifc.createIfcBuildingStorey(ios.guid.new(), ownerHistory)
     _tier.Name = _srp.Name + ". " + _name
     # _tier.Name = _name
     _tier.Elevation = _elevation
     return _tier
 
+
 for _srp in srps:
-    _tierContainer = ifc.createIfcRelAggregates()
+    _tierContainer = ifc.createIfcRelAggregates(ios.guid.new())
     _tierContainer.RelatingObject = _srp
     _tiers = []
     for k, v in PRLevels.items():
@@ -427,14 +435,15 @@ for _srp in srps:
         _frame.ObjectPlacement = create_customgridplacement(PRMainAxis, _axis)
         _frames.append(_frame)
         frames.append(_frame)
-    _frameContainer = ifc.createIfcRelAggregates()
+    _frameContainer = ifc.createIfcRelAggregates(ios.guid.new())
     _frameContainer.RelatingObject = _srp
     _frameContainer.RelatedObjects = _frames
-        
+
 
 # Создание колонн
 
 rectProfiles = []
+
 
 def createRectProfile(
     _XDim=600.,
@@ -456,6 +465,7 @@ def createRectProfile(
 
 cardinalPoints = []
 cardinalPointsCoords = []
+
 
 def findCardinalPointCoords(xd=100., yd=100., index=5):
     if index == 1:
@@ -491,6 +501,7 @@ def findCardinalPointCoords(xd=100., yd=100., index=5):
 
 extrudedAreaSolids = []
 
+
 def createExtrudedAreaSolid(
     _XDim=600.,
     _YDim=600.,
@@ -498,7 +509,7 @@ def createExtrudedAreaSolid(
     _CardinalIndex=5,
     _StartCut=0.,
     _EndCut=0.,
-#    _Axis=globalAxisZ
+    #    _Axis=globalAxisZ
 ):
     # _profile=None
     # for p in rectProfiles:
@@ -506,8 +517,9 @@ def createExtrudedAreaSolid(
     #         _profile = p
     # if _profile == None:
     _profile = createRectProfile(_XDim, _YDim)
-    _cardinalPoint=None
-    _cardinalPointCoords=findCardinalPointCoords(_XDim, _YDim, _CardinalIndex)
+    _cardinalPoint = None
+    _cardinalPointCoords = findCardinalPointCoords(
+        _XDim, _YDim, _CardinalIndex)
     _cardinalPointCoords[2] += _StartCut
     for cp in cardinalPoints:
         if list(cp.Coordinates) == _cardinalPointCoords:
@@ -523,27 +535,28 @@ def createExtrudedAreaSolid(
     _eas.Depth = _Depth - _StartCut - _EndCut
     extrudedAreaSolids.append(_eas)
     return _eas
-    
+
 
 productDefShapes = []
+
 
 def ColumnPDSCreation(
     _XDim=600.,
     _YDim=600.,
     _Depth=6000.,
-#    _Axis=globalAxisZ
+    #    _Axis=globalAxisZ
 ):
-    _columnEAS=None
+    _columnEAS = None
     for eas in extrudedAreaSolids:
         if (_XDim == eas.SweptArea.XDim and
-            _YDim == eas.SweptArea.YDim and 
+            _YDim == eas.SweptArea.YDim and
             _Depth == eas.Depth
             ):
             _columnEAS = eas
     if _columnEAS == None:
         _columnEAS = createExtrudedAreaSolid(_XDim, _YDim, _Depth, 5)
-    
-    _columnPDS=None
+
+    _columnPDS = None
     for pds in productDefShapes:
         if pds.Representations[0].Items[0] == _columnEAS:
             _columnPDS = pds
@@ -557,7 +570,7 @@ def ColumnPDSCreation(
         _columnPDS.Name = f"{_XDim}x{_YDim}x{_Depth}"
         _columnPDS.Description = f"Column of {_XDim}x{_YDim} rectangular section and {_Depth} height"
         _columnPDS.Representations = [_columnSP]
-        
+
     productDefShapes.append(_columnPDS)
     return _columnPDS
 
@@ -571,13 +584,14 @@ def ColumnCreation(
     _Tag='PCC',
     _RelatingStructure=site,
     _Side=None,
-):    
+):
     _columnPlacement = ifc.createIfcLocalPlacement()
     _columnPlacement.PlacementRelTo = _RelatingStructure.ObjectPlacement
-    _columnPlacement.RelativePlacement = ifc.createIfcAxis2Placement3d(_Side,_Axis)
-    
-    _columnPDS = ColumnPDSCreation(_XDim,_YDim,_Depth)
-    
+    _columnPlacement.RelativePlacement = ifc.createIfcAxis2Placement3d(
+        _Side, _Axis)
+
+    _columnPDS = ColumnPDSCreation(_XDim, _YDim, _Depth)
+
     _column = ifc.createIfcColumn(ios.guid.new(), ownerHistory)
     _column.Name = _Name
     _column.Tag = _Tag
@@ -588,8 +602,6 @@ def ColumnCreation(
     return _column
 
 
-
-
 def BeamPDSCreation(
     _XDim=500.,
     _YDim=700.,
@@ -598,11 +610,11 @@ def BeamPDSCreation(
     _StartCut=0.,
     _EndCut=0.,
 ):
-    _beamEAS=None
+    _beamEAS = None
     for eas in extrudedAreaSolids:
-        if ( _XDim == eas.SweptArea.XDim and
-            _YDim == eas.SweptArea.YDim and 
-             _Depth == eas.Depth
+        if (_XDim == eas.SweptArea.XDim and
+                _YDim == eas.SweptArea.YDim and
+                _Depth == eas.Depth
             ):
             _beamEAS = eas
     if _beamEAS == None:
@@ -614,8 +626,8 @@ def BeamPDSCreation(
             _StartCut,
             _EndCut,
         )
-    
-    _beamPDS=None
+
+    _beamPDS = None
     for pds in productDefShapes:
         if pds.Representations[0].Items[0] == _beamEAS:
             _beamPDS = pds
@@ -630,9 +642,10 @@ def BeamPDSCreation(
         _beamPDS.Description = f"Beam of {_XDim}x{_YDim} rectangular section and {_Depth} length"
 #        _beamPDS.Description = f"{cardinalPoints}"
         _beamPDS.Representations = [_beamSP]
-        
+
     productDefShapes.append(_beamPDS)
     return _beamPDS
+
 
 def BeamCreation(
     _XDim=500.,
@@ -646,11 +659,12 @@ def BeamCreation(
     _CardinalIndex=0,
     _StartCut=0.,
     _EndCut=0.,
-):    
+):
     _beamPlacement = ifc.createIfcLocalPlacement()
     _beamPlacement.PlacementRelTo = _RelatingStructure.ObjectPlacement
-    _beamPlacement.RelativePlacement = ifc.createIfcAxis2Placement3d(_Side,_Axis)
-    
+    _beamPlacement.RelativePlacement = ifc.createIfcAxis2Placement3d(
+        _Side, _Axis)
+
     _beamPDS = BeamPDSCreation(
         _XDim,
         _YDim,
@@ -659,28 +673,26 @@ def BeamCreation(
         _StartCut,
         _EndCut,
     )
-    
+
     _beam = ifc.createIfcBeam(ios.guid.new(), ownerHistory)
     _beam.Name = _Name
     _beam.Tag = _Tag
     _beam.PredefinedType = 'BEAM'
     _beam.ObjectPlacement = _beamPlacement
     _beam.Representation = _beamPDS
-    
+
     return _beam
 
 
-
-
-
-
-LeftPoint = ifc.createIfcCartesianPoint([0., PRWidth/2, PRLevels['Ground Level']])
-RightPoint = ifc.createIfcCartesianPoint([0., -PRWidth/2, PRLevels['Ground Level']])
+LeftPoint = ifc.createIfcCartesianPoint(
+    [0., PRWidth/2, PRLevels['Ground Level']])
+RightPoint = ifc.createIfcCartesianPoint(
+    [0., -PRWidth/2, PRLevels['Ground Level']])
 Tier1Point = ifc.createIfcCartesianPoint([0., -PRWidth/2, PRLevels['Tier 1']])
 Tier2Point = ifc.createIfcCartesianPoint([0., -PRWidth/2, PRLevels['Tier 2']])
 
 for _frame in frames:
-    _columnSize = 600.,600.
+    _columnSize = 600., 600.
     _TagC = 'PCC' + str(frames.index(_frame) + 1)
     _TagB = 'PCB' + str(frames.index(_frame) + 1)
     _Depth = PRLevels['Tier 2']-PRLevels['Ground Level'],
@@ -729,9 +741,11 @@ for _frame in frames:
         _StartCut=_columnSize[0]/2,
         _EndCut=_columnSize[0]/2,
     )
-    _elementsContainer = ifc.createIfcRelContainedInSpatialStructure()
+    _elementsContainer = ifc.createIfcRelContainedInSpatialStructure(
+        ios.guid.new())
     _elementsContainer.RelatingStructure = _frame
-    _elementsContainer.RelatedElements = [_leftColumn, _rightColumn, _lowerBeam, _upperBeam]
+    _elementsContainer.RelatedElements = [
+        _leftColumn, _rightColumn, _lowerBeam, _upperBeam]
 
 
 beamPlacement = ifc.createIfcLocalPlacement()
@@ -747,7 +761,7 @@ beamEAS = ifc.createIfcExtrudedAreaSolid()
 beamEAS.SweptArea = beamP
 beamEAS.ExtrudedDirection = globalAxisZ
 beamEAS.Depth = 6000.
-beamPos = ifc.createIfcCartesianPoint([0.,350.,0.])
+beamPos = ifc.createIfcCartesianPoint([0., 350., 0.])
 beamEAS.Position = ifc.createIfcAxis2Placement3d(beamPos)
 beamStart = beamPlacement.RelativePlacement.Location
 beamEnd = ifc.createIfcCartesianPoint([
@@ -777,7 +791,7 @@ beam.Name = f'{beamPlacement.RelativePlacement.Axis.DirectionRatios}'
 beam.ObjectPlacement = beamPlacement
 beam.Representation = beamPDS
 
-beamContainer = ifc.createIfcRelContainedInSpatialStructure()
+beamContainer = ifc.createIfcRelContainedInSpatialStructure(ios.guid.new())
 beamContainer.RelatingStructure = frames[1]
 beamContainer.RelatedElements = [beam]
 
@@ -788,23 +802,26 @@ beamContainer.RelatedElements = [beam]
 path = '/Users/vdobranov/Yandex.Disk.localized/Python/Mac/ifcopenshell/new_model.ifc'
 ifc.write(path)
 
+
 def load_ifc_automatically(f):
     if (bool(f)) == True:
         _project = f.by_type('IfcProject')
-        
+
         if _project != None:
             for i in _project:
                 _collection_name = 'IfcProject/' + i.Name
-            
+
             _collection = bpy.data.collections.get(str(_collection_name))
-            
+
             if _collection != None:
                 for _obj in _collection.objects:
                     bpy.data.objects.remove(_obj, do_unlink=True)
-                    
+
                 bpy.data.collections.remove(_collection)
-        
-        bpy.ops.outliner.orphans_purge(do_local_ids=True, do_linked_ids=True, do_recursive=True)
+
+        bpy.ops.outliner.orphans_purge(
+            do_local_ids=True, do_linked_ids=True, do_recursive=True)
         bpy.ops.bim.load_project(filepath=path)
+
 
 load_ifc_automatically(ifc)
